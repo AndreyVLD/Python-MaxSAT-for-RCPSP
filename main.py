@@ -1,6 +1,7 @@
 from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF
 from DataParser import TaskDataParser
+from pysat.card import CardEnc
 
 # Reading the input RCPSP file
 # file_path = input("Please input the file path of the data file: ")
@@ -22,6 +23,7 @@ for i in range(1, parser.N_TASKS + 1):
 # Creating the corresponding WCNF formula
 wcnf = WCNF()
 
+# Completion Clauses S_i
 for i in range(1, parser.N_TASKS + 1):
     di = parser.d[i - 1]
     clause = []
@@ -29,6 +31,19 @@ for i in range(1, parser.N_TASKS + 1):
         xi_t = activity_time_mapping[(i, t)]
         clause.append(xi_t)
     wcnf.append(clause)
+
+# Completion Clauses F_i
+for t in range(T):
+    literals_sum = [activity_time_mapping[(i, t)] for i in range(1, parser.N_TASKS + 1) if
+                    (i, t) in activity_time_mapping]
+    literals_sum_clause = CardEnc.equals(lits=literals_sum, bound=1)
+    wcnf.extend(literals_sum_clause)
+
+# Resource Clause C_i
+
+# Resource Clause R_kt
+
+# Precedence Clause P_ij
 
 # Printing to file as DIMACS
 wcnf.to_file("Data/Q3_1.wcnf")  # file_path.replace(".dzn", ".wcnf"))
