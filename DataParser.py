@@ -24,7 +24,7 @@ class TaskDataParser:
                 self.rr = [int(x.replace(',', "")) for x in parts[3:parts.index('];')]]
             else:
                 parts = [x for x in parts if x.replace(',', "").isdigit()]
-                successors = [int(x.replace(',',"")) for x in parts]
+                successors = [int(x.replace(',', "")) for x in parts]
                 self.suc.append(successors)
 
     def print_data(self):
@@ -41,5 +41,11 @@ class TaskDataParser:
             duration = self.d[task_number - 1]
             resource_requirement = self.rr[task_number - 1]
             return duration, resource_requirement
+        else:
+            return None
+
+    def get_successors(self, task_number):
+        if 1 <= task_number <= len(self.d):
+            return self.suc[task_number - 1]
         else:
             return None
