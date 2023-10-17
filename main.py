@@ -41,7 +41,8 @@ for t in range(T):
     wcnf.extend(literals_sum_clause)
 
 # Resource Clause C_i
-
+cnf1 = PBEnc.atmost(lits=[1, 2, 3], weights=[1, 2, 3], bound=3)
+print(cnf1.clauses)
 # Resource Clause R_kt
 
 # Precedence Clause P_ij
