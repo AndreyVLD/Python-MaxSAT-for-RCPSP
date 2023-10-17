@@ -2,6 +2,7 @@ from pysat.examples.rc2 import RC2
 from pysat.formula import WCNF, CNF
 from DataParser import TaskDataParser
 from pysat.card import CardEnc
+from pysat.pb import *
 
 # Reading the input RCPSP file
 # file_path = input("Please input the file path of the data file: ")
