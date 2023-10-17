@@ -1,5 +1,5 @@
 from pysat.examples.rc2 import RC2
-from pysat.formula import WCNF
+from pysat.formula import WCNF, CNF
 from DataParser import TaskDataParser
 from pysat.card import CardEnc
 
@@ -48,7 +48,8 @@ for t in range(T):
 # Printing to file as DIMACS
 wcnf.to_file("Data/Q3_1.wcnf")  # file_path.replace(".dzn", ".wcnf"))
 # Reads the formula from a file
-# cnf = WCNF(from_file='Data/test1.wcnf')
+# cnf = WCNF() cnf.extend([[4], [-5, -2], [-5, 2, -1], [-5, -1], [-6, 1], [-7, -2, 6],
+# [-7, 2], [-7, 6], [-8, -3, 5], [-8, 3, 7], [-8, 5, 7], [8]])
 
 # Print the soft and hard clauses
 # print("Soft: " + cnf.soft.__str__() + "\n" + "Hard: " + cnf.hard.__str__())
@@ -57,4 +58,5 @@ wcnf.to_file("Data/Q3_1.wcnf")  # file_path.replace(".dzn", ".wcnf"))
 # rc2 = RC2(cnf)
 
 # Print the solution and the cost
-# print(rc2.compute().__str__() + "\n"+rc2.cost.__str__())
+# for m in rc2.enumerate():
+# print('model {0} has cost {1}'.format(m, rc2.cost))
