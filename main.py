@@ -12,6 +12,7 @@ parser.print_data()
 
 # (Activity, Time) to literal mapping
 activity_time_mapping = {}
+during_activity = {}
 T = sum(parser.d) + max(parser.d) + 1  # Time horizon
 literal_counter = 1
 
@@ -19,6 +20,13 @@ for i in range(1, parser.N_TASKS + 1):
     di = parser.d[i - 1]
     for t in range(0, T - di + 1):
         activity_time_mapping[(i, t)] = literal_counter
+        literal_counter += 1
+
+# (Activity, DuringTime) to literal mapping
+for i in range(1, parser.N_TASKS + 1):
+    di = parser.d[i - 1]
+    for t in range(0, T):     # TODO can an event be active at times beyond T-di ? (resources clause)
+        during_activity[(i, t)] = literal_counter
         literal_counter += 1
 
 # Creating the corresponding WCNF formula
@@ -37,15 +45,60 @@ for i in range(1, parser.N_TASKS + 1):
 for t in range(T):
     literals_sum = [activity_time_mapping[(i, t)] for i in range(1, parser.N_TASKS + 1) if
                     (i, t) in activity_time_mapping]
-    literals_sum_clause = CardEnc.equals(lits=literals_sum, bound=1)
+    literals_sum_clause = CardEnc.equals(lits=literals_sum, bound=1,top_id=literal_counter)
+
+    #print(literals_sum)
+    #print(literals_sum_clause.clauses)
+
+    highest_variable = max(abs(lit) for clause in literals_sum_clause for lit in clause)
+    literal_counter=highest_variable
+
+    #print(highest_variable)
+
     wcnf.extend(literals_sum_clause)
 
 # Resource Clause C_i
-cnf1 = PBEnc.atmost(lits=[1, 2, 3], weights=[1, 2, 3], bound=3)
-print(cnf1.clauses)
+#print(during_activity)
+
+for i in range(1,parser.N_TASKS+1):
+    di = parser.d[i-1]
+    for t in range(0,T-di+1):
+        for u in range(t,t+di-1):
+            wcnf.append([-activity_time_mapping[(i,t)],during_activity[(i,u)]])
+
 # Resource Clause R_kt
+for t in range(0,T):
+    lit_R = [during_activity[(i, t)] for i in range(1, parser.N_TASKS + 1) if
+                    (i, t) in during_activity]
+
+    wcnf_r = PBEnc.atmost(lit_R,parser.rr,bound=parser.CAPACITY,top_id=literal_counter)
+    # print(lit_R)
+    # print(literal_counter)
+    # print(wcnf_r.clauses)
+    # print()
+    wcnf.extend(wcnf_r.clauses)
+    highest_variable = max(abs(lit) for clause in wcnf_r for lit in clause)
+
+    literal_counter = highest_variable
+
+
 
 # Precedence Clause P_ij
+for j in range(parser.N_TASKS):
+    dependents = parser.suc[j]
+    dj  = parser.d[j]
+    z_i_t = []
+    if len(dependents) > 0:
+        for t in range(0,T-dj+1):
+            for i in dependents:
+                di = parser.d[i-1]
+                for u in  range(0,t-di):
+                    z_i_t.append(activity_time_mapping[(i,u)])
+                z_i_t.append(-activity_time_mapping[(j+1,t)])
+                wcnf.append(z_i_t)
+                z_i_t = []
+
+# TODO Weak Clause: what is y_n+1_t ?
 
 # Printing to file as DIMACS
 wcnf.to_file("Data/Q3_1.wcnf")  # file_path.replace(".dzn", ".wcnf"))
