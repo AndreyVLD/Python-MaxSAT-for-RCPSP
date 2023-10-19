@@ -4,9 +4,17 @@ from DataParser import TaskDataParser
 from pysat.card import CardEnc
 from pysat.pb import *
 
+# Parser data structure info:
+# CAPACITY = maximum resource capacity
+# N_TASKS = number of tasks
+# d = list of durations of each task
+# rr = list of resource requirements of each task
+# suc = list of successors of each task ( list of lists )
+
+
 # Reading the input RCPSP file
-# file_path = input("Please input the file path of the data file: ")
-parser = TaskDataParser("Data/Q3_1.dzn")
+file_path = input("Please input the file path of the data file: ")
+parser = TaskDataParser(file_path)
 parser.read_data_from_file()
 parser.print_data()
 
@@ -48,35 +56,26 @@ for t in range(T):
                     (i, t) in activity_time_mapping]
     literals_sum_clause = CardEnc.equals(lits=literals_sum, bound=1,top_id=literal_counter)
 
-    #print(literals_sum)
-    #print(literals_sum_clause.clauses)
-
+    # Calculating the highest variable to avoid collisions from the auxiliary variables
     highest_variable = max(abs(lit) for clause in literals_sum_clause for lit in clause)
     literal_counter=highest_variable
-
-    #print(highest_variable)
 
     wcnf.extend(literals_sum_clause)
 
 # Resource Clause C_i
-#print(during_activity)
-
 for i in range(1,parser.N_TASKS+1):
     di = parser.d[i-1]
     for t in range(0,T-di+1):
         for u in range(t,t+di-1):
             wcnf.append([-activity_time_mapping[(i,t)],during_activity[(i,u)]])
 
-# Resource Clause R_kt
+# Resource Clause R_k_t
 for t in range(0,T):
     lit_R = [during_activity[(i, t)] for i in range(1, parser.N_TASKS + 1) if
                     (i, t) in during_activity]
 
     wcnf_r = PBEnc.atmost(lit_R,parser.rr,bound=parser.CAPACITY,top_id=literal_counter)
-    # print(lit_R)
-    # print(literal_counter)
-    # print(wcnf_r.clauses)
-    # print()
+
     wcnf.extend(wcnf_r.clauses)
     highest_variable = max(abs(lit) for clause in wcnf_r for lit in clause)
 
@@ -84,26 +83,41 @@ for t in range(0,T):
 
 
 
-# Precedence Clause P_ij
+# Precedence Clause P_i_j
 for j in range(parser.N_TASKS):
+
+    # For every task we get the dependents
     dependents = parser.suc[j]
     dj  = parser.d[j]
+
+    # Vector of dependents
     z_i_t = []
-    if len(dependents) > 0:
-        for t in range(0,T-dj+1):
-            for i in dependents:
+    if len(dependents) > 0:    # If there are dependents
+        for t in range(0,T-dj+1):  # For every time step
+            for i in dependents:        # For every dependent
                 di = parser.d[i-1]
-                for u in  range(0,t-di):
+                for u in  range(0,t-di):    # Computing z_i_t
                     z_i_t.append(activity_time_mapping[(i,u)])
-                z_i_t.append(-activity_time_mapping[(j+1,t)])
-                wcnf.append(z_i_t)
+                z_i_t.append(-activity_time_mapping[(j+1,t)])     # Adding -x_j_t
+                wcnf.append(z_i_t)  # Appending the clause with AND
                 z_i_t = []
 
 # TODO Weak Clause: what is y_n+1_t ?
 
 # Printing to file as DIMACS
-wcnf.to_file("Data/Q3_1.wcnf")  # file_path.replace(".dzn", ".wcnf"))
+file_path.replace(".dzn", ".wcnf")
 
 # Solve the formula
 rc2 = RC2(wcnf)
+solution = rc2.compute()
+
+print(solution)
+# Print the solution
+for i in range(1, parser.N_TASKS + 1):
+    di = parser.d[i - 1]
+    for t in range(0, T - di + 1):
+        if solution[activity_time_mapping[(i, t)]-1] > 0:
+            print(f"Task {i} starts at time {t}")
+            break
+
 
