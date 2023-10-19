@@ -10,22 +10,23 @@ parser = TaskDataParser("Data/Q3_1.dzn")
 parser.read_data_from_file()
 parser.print_data()
 
-# (Activity, Time) to literal mapping
-activity_time_mapping = {}
-during_activity = {}
-T = sum(parser.d) + max(parser.d) + 1  # Time horizon
-literal_counter = 1
 
+activity_time_mapping = {}    # (Activity, Time) started at Time
+during_activity = {}    # (Activity, DuringTime) is on during DuringTime
+T = sum(parser.d) + max(parser.d) + 1   # Time horizon
+literal_counter = 1    # Counter for the literals in the WCNF formula
+
+# (Activity, Time) to literal mapping
 for i in range(1, parser.N_TASKS + 1):
     di = parser.d[i - 1]
     for t in range(0, T - di + 1):
         activity_time_mapping[(i, t)] = literal_counter
         literal_counter += 1
 
-# (Activity, DuringTime) to literal mapping
+# (Activity, DuringTime) to literal Mapping
 for i in range(1, parser.N_TASKS + 1):
     di = parser.d[i - 1]
-    for t in range(0, T):     # TODO can an event be active at times beyond T-di ? (resources clause)
+    for t in range(0, T):
         during_activity[(i, t)] = literal_counter
         literal_counter += 1
 
@@ -102,16 +103,7 @@ for j in range(parser.N_TASKS):
 
 # Printing to file as DIMACS
 wcnf.to_file("Data/Q3_1.wcnf")  # file_path.replace(".dzn", ".wcnf"))
-# Reads the formula from a file
-# cnf = WCNF() cnf.extend([[4], [-5, -2], [-5, 2, -1], [-5, -1], [-6, 1], [-7, -2, 6],
-# [-7, 2], [-7, 6], [-8, -3, 5], [-8, 3, 7], [-8, 5, 7], [8]])
-
-# Print the soft and hard clauses
-# print("Soft: " + cnf.soft.__str__() + "\n" + "Hard: " + cnf.hard.__str__())
 
 # Solve the formula
-# rc2 = RC2(cnf)
+rc2 = RC2(wcnf)
 
-# Print the solution and the cost
-# for m in rc2.enumerate():
-# print('model {0} has cost {1}'.format(m, rc2.cost))
