@@ -1,3 +1,11 @@
+###
+# Parser data structure info:
+# CAPACITY = maximum resource capacity
+# N_TASKS = number of tasks
+# d = list of durations of each task
+# rr = list of resource requirements of each task
+# suc = list of successors of each task ( list of lists )
+###
 class TaskDataParser:
     def __init__(self, filename):
         self.filename = filename

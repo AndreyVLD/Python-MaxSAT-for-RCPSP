@@ -37,8 +37,16 @@ for i in range(1, parser.N_TASKS + 1):
         during_activity[(i, t)] = literal_counter
         literal_counter += 1
 
+dummy_task = parser.N_TASKS + 1
+for t in range(0, T):
+    activity_time_mapping[(dummy_task, t)] = literal_counter
+    literal_counter += 1
 # Creating the corresponding WCNF formula
 wcnf = WCNF()
+
+# Adding the dummy task
+for t in range(0, T):
+    wcnf.append([-activity_time_mapping[(dummy_task, t)]], weight=t + 1)
 
 # Completion Clauses S_i
 for i in range(1, parser.N_TASKS + 1):
@@ -48,6 +56,17 @@ for i in range(1, parser.N_TASKS + 1):
         xi_t = activity_time_mapping[(i, t)]
         clause.append(xi_t)
     wcnf.append(clause)
+
+# Completion Clauses for dummy task
+literals = []
+for t in range(0, T):
+    literals.append(activity_time_mapping[(dummy_task, t)])
+clause = CardEnc.equals(lits=literals, bound=1, top_id=literal_counter)
+wcnf.extend(clause)
+
+# Calculating the highest variable to avoid collisions from the auxiliary variables
+highest_variable = max(abs(lit) for clause in clause for lit in clause)
+literal_counter = highest_variable
 
 # Completion Clauses F_i
 for t in range(T):
@@ -99,10 +118,19 @@ for j in range(parser.N_TASKS):
                 wcnf.append(z_i_t)  # Appending the clause with AND
                 z_i_t = []
 
-# TODO Weak Clause: what is y_n+1_t ?
+# Weak Clause W_i with dummy task
+z_i_t = []
+for t in range(0, T):  # For every time step
+    for i in range(1, parser.N_TASKS + 1):  # For every dependent
+        di = parser.d[i - 1]
+        for u in range(0, t - di):  # Computing z_i_t
+            z_i_t.append(activity_time_mapping[(i, u)])
+        z_i_t.append(-activity_time_mapping[(dummy_task, t)])
+        wcnf.append(z_i_t)  # Appending the clause with AND
+        z_i_t = []
 
 # Printing to file as DIMACS
-file_path.replace(".dzn", ".wcnf")
+wcnf.to_file(file_path.replace(".dzn", ".wcnf"))
 
 # Solve the formula
 rc2 = RC2(wcnf)
@@ -113,6 +141,6 @@ print(solution)
 for i in range(1, parser.N_TASKS + 1):
     di = parser.d[i - 1]
     for t in range(0, T - di + 1):
-        if solution[activity_time_mapping[(i, t)] - 1] > 0:
+        if solution[activity_time_mapping[(i, t)] - 1] >= 0:
             print(f"Task {i} starts at time {t}")
             break
